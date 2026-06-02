@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPS Google Calendar Online Logbook</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        npsNavy: '#002D62',
+                        npsYellow: '#FFCC00',
+                        npsNavyLight: 'rgba(0, 45, 98, 0.05)',
+                        npsNavyMedium: 'rgba(0, 45, 98, 0.15)',
+                    },
+                    fontFamily: {
+                        prompt: ['Prompt', 'sans-serif'],
+                        sarabun: ['Sarabun', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .slide-frame {
+            width: 1280px;
+            height: 720px;
+            aspect-ratio: 16/9;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            background-color: #ffffff;
+        }
+
+        .slide-content {
+            opacity: 0;
+            transform: scale(0.98) translateY(10px);
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+        }
+
+        .slide-content.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+            display: block;
+        }
+
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(0, 45, 98, 0.03);
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(0, 45, 98, 0.15);
+            border-radius: 10px;
+        }
+
+        .nps-accent-bar {
+            background: linear-gradient(90deg, #002D62 0%, #FFCC00 50%, #002D62 100%);
+            height: 8px;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            z-index: 50;
+        }
+
+        @media (max-width: 1320px) {
+            .slide-frame {
+                transform: scale(calc((100vw - 48px) / 1280));
+                transform-origin: center center;
+            }
+            body {
+                min-height: 720px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-200 min-h-screen flex flex-col items-center justify-center p-6 font-sarabun text-slate-800 overflow-hidden">
+
+    <div class="slide-frame relative flex flex-col justify-between p-10 bg-white select-none">
+        <div class="flex justify-between items-center z-40 border-b border-slate-100 pb-3 h-12">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="bg-npsNavy text-npsYellow font-prompt font-bold text-xs px-2.5 py-1 rounded-md tracking-wider shrink-0">NPS CHAMPIONS</div>
+                <h2 class="font-prompt font-bold text-npsNavy text-lg truncate" id="presentation-main-title">
+                    สมุดพกออนไลน์ (Google Calendar)
+                </h2>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <span class="bg-npsNavyLight border border-npsNavyMedium text-npsNavy font-prompt text-xs font-semibold px-4 py-1.5 rounded-full" id="slide-indicator">
+                    หน้า 1 จาก 11: Dashboard ภาพรวม
+                </span>
+                <button onclick="goToSlide(0)" id="back-dashboard-btn" class="hidden bg-slate-100 hover:bg-npsNavy hover:text-white transition-all text-npsNavy font-prompt text-xs font-semibold px-4 py-1.5 rounded-full flex items-center gap-1.5">
+                    <i class="fa-solid fa-table-cells"></i> ภาพรวมทั้งหมด
+                </button>
+            </div>
+        </div>
+
+        <div class="relative flex-grow my-4 overflow-hidden h-[540px]">
+            <div class="slide-content active" id="slide-0">
+                <div class="flex flex-col justify-between h-full">
+                    <div class="flex justify-between items-end border-l-8 border-npsYellow pl-4 mb-2">
+                        <div>
+                            <h3 class="font-prompt font-bold text-npsNavy text-2xl">
+                                10 พนักงานต้นแบบ NPS "สมุดพกออนไลน์"
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-1">
+                                โครงการบันทึกการทำงานเพื่อประเมิน Workload, การวางแผนบริหารเวลา และบันทึกการเรียนรู้เชิงลึกรายบุคคล
+                            </p>
+                        </div>
+                        <div class="flex gap-2 text-[10px] font-prompt font-bold">
+                            <span class="bg-slate-50 text-slate-600 px-3 py-1 rounded-md border border-slate-200"><i class="fa-solid fa-chart-line text-npsNavy mr-1"></i> 1. ดู Workload</span>
+                            <span class="bg-slate-50 text-slate-600 px-3 py-1 rounded-md border border-slate-200"><i class="fa-solid fa-calendar-check text-npsNavy mr-1"></i> 2. แผนงานล่วงหน้า</span>
+                            <span class="bg-slate-50 text-slate-600 px-3 py-1 rounded-md border border-slate-200"><i class="fa-solid fa-graduation-cap text-npsNavy mr-1"></i> 3. เรียนรู้งานใหม่</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-5 grid-rows-2 gap-3 h-[440px] w-full" id="overview-grid"></div>
+                </div>
+            </div>
+
+            <div class="slide-content" id="slide-profile-container"></div>
+        </div>
+
+        <div class="flex justify-between items-center z-40 border-t border-slate-100 pt-3 h-10">
+            <span class="text-xs font-semibold text-slate-400 font-prompt">
+                National Power Supply Public Company Limited (NPS)
+            </span>
+            <div class="flex items-center gap-3">
+                <button onclick="prevSlide()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-npsNavy hover:text-white transition-all text-npsNavy flex items-center justify-center text-sm shadow-sm" title="สไลด์ก่อนหน้า">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <div class="flex gap-1.5" id="carousel-dots"></div>
+                <button onclick="nextSlide()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-npsNavy hover:text-white transition-all text-npsNavy flex items-center justify-center text-sm shadow-sm" title="สไลด์ถัดไป">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="nps-accent-bar"></div>
+    </div>
+
+    <script>
+        const employeeData = [
+            {
+                id: "680705",
+                name: "ณัฐพงศ์ คุณสาระ",
+                img: "assets/people/680705.jpg",
+                position: "วิศวกรงานซ่อมบำรุงรถบรรทุก",
+                dept: "Logistic Maintenance",
+                tenure: "0 ปี 9 เดือน",
+                age: "23 ปี 4 เดือน",
+                aiScore: "10",
+                gmailLink: "https://calendar.google.com/calendar/u/0?cid=bmF0dGhhcG9uZy5rNzM0M0BnbWFpbC5jb20",
+                profileDetail: {
+                    education: "ป. ตรี วิศวกรรมเครื่องกล มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าพระนครเหนือ",
+                    supervisor: "ธนพล ภักดีพิน",
+                    highlightTitle: "ใช้ STAR Technique + Knowledge Capture ในการบันทึกประจำวัน",
+                    highlights: [
+                        "<strong>โครงสร้างข้อมูลครบและถูกต้อง</strong> — บันทึกข้อมูลได้ครบถ้วน เหมาะต่อการติดตามงานและย้อนดูรายละเอียด",
+                        "<strong>บริหารเวลาได้สมดุล</strong> — แสดงให้เห็นการจัดลำดับงานและการวางแผนงานที่ชัดเจน",
+                        "<strong>รองรับการเรียนรู้งาน</strong> — ใช้บันทึกเป็นฐานข้อมูลเพื่อพัฒนาและถ่ายทอดความรู้ในทีม"
+                    ]
+                }
+            },
+            {
+                id: "680374",
+                name: "ภูริต ศรีจิระภาส",
+                img: "assets/people/680374.jpg",
+                position: "HR Strategy and Project Officer",
+                dept: "Human Capital Management",
+                tenure: "1 ปี 0 เดือน",
+                age: "24 ปี 9 เดือน",
+                aiScore: "9.5",
+                gmailLink: "https://calendar.google.com/calendar/u/0?cid=Ymh1cmljaC5zcmljaGlAZ21haWwuY29t",
+                profileDetail: {
+                    education: "ป. ตรี เศรษฐศาสตร์ มหาวิทยาลัยธรรมศาสตร์",
+                    supervisor: "กษมาพร เตียนสายอ๋อ",
+                    highlightTitle: "ใช้ AI & Automation ร่วมกับวินัยในการบันทึกงาน",
+                    highlights: [
+                        "<strong>HR Tech & Automation</strong> — เชื่อมโยงงาน HR กับเครื่องมือดิจิทัลได้ดี",
+                        "<strong>Data-Driven</strong> — ใช้ข้อมูลช่วยวิเคราะห์งานและปรับปรุงกระบวนการ",
+                        "<strong>ความสม่ำเสมอ</strong> — บันทึกงานต่อเนื่องและสะท้อนศักยภาพในการเรียนรู้งาน"
+                    ]
+                }
+            },
+            {
+                id: "650464",
+                name: "อภิษฐา ศรีสังข์",
+                img: "assets/people/650464.jpg",
+                position: "Internal Audit Senior Officer",
+                dept: "Internal Audit (IA)",
+                tenure: "3 ปี 10 เดือน",
+                age: "27 ปี 11 เดือน",
+                aiScore: "9",
+                gmailLink: "https://calendar.google.com/calendar/u/0?cid=YXBpc3RoYS5zMzY4N0BnbWFpbC5jb20",
+                profileDetail: {
+                    education: "ป. ตรี บช.บ. บัญชี มหาวิทยาลัยศรีนครินทรวิโรฒ",
+                    supervisor: "นิติชัย ทองแป้น",
+                    highlightTitle: "บันทึกงานเป็นระบบ เหมาะกับงานตรวจสอบภายใน",
+                    highlights: [
+                        "<strong>ความละเอียดรอบคอบ</strong> — จัดข้อมูลเป็นลำดับและตรวจสอบย้อนหลังได้",
+                        "<strong>ความถูกต้องของข้อมูล</strong> — ข้อมูลสนับสนุนการติดตามงานและการรายงาน",
+                        "<strong>มาตรฐานงาน</strong> — สะท้อนวินัยและความน่าเชื่อถือของงานตรวจสอบ"
+                    ]
+                }
+            },
+            {
+                id: "670600",
+                name: "พงศ์ชนะ สุภาพ",
+                img: "assets/people/670600.jpg",
+                position: "Business Development Technical Officer",
+                dept: "Business Development & Strategic Planning (BD)",
+                tenure: "1 ปี 10 เดือน",
+                age: "24 ปี 8 เดือน",
+                aiScore: "9",
+                gmailLink: "https://calendar.google.com/calendar/u/4?cid=cG9uZ2NoYW5hLnMyMDQ1QGdtYWlsLmNvbQ",
+                profileDetail: {
+                    education: "ป. ตรี วศ.บ. วิศวกรรมไฟฟ้า มหาวิทยาลัยเชียงใหม่",
+                    supervisor: "ธนรัตน์ วิทยเตชะกุล",
+                    highlightTitle: "เชื่อมโยงงานเทคนิคกับการวางแผนธุรกิจได้ชัดเจน",
+                    highlights: [
+                        "<strong>Technical Insight</strong> — นำมุมมองด้านวิศวกรรมมาช่วยวิเคราะห์งาน",
+                        "<strong>Planning</strong> — วางแผนกิจกรรมและลำดับงานได้เป็นระบบ",
+                        "<strong>Business Value</strong> — เห็นความเชื่อมโยงของงานกับเป้าหมายเชิงธุรกิจ"
+                    ]
+                }
+            },
+            {
+                id: "620676",
+                name: "ธวัชชัย ดวงตาผา",
+                img: "assets/people/620676.jpg",
+                position: "รักษาการผู้จัดการแผนกบำรุงรักษาเครื่องกล (Rotating)",
+                dept: "Central Maintenance",
+                tenure: "6 ปี 11 เดือน",
+                age: "29 ปี 8 เดือน",
+                aiScore: "8.5",
+                gmailLink: "https://calendar.google.com/calendar/embed?src=thawatchai.d6544%40gmail.com&ctz=Asia%2FBangkok",
+                profileDetail: {
+                    education: "ป. ตรี วศ.บ. อุตสาหการ มหาวิทยาลัยขอนแก่น",
+                    supervisor: "จักรพงษ์ สีกะยอม",
+                    highlightTitle: "บันทึกงานบำรุงรักษาเพื่อเห็นภาพภาระงานและการแก้ปัญหา",
+                    highlights: [
+                        "<strong>Maintenance Tracking</strong> — เก็บข้อมูลกิจกรรมซ่อมบำรุงได้ต่อเนื่อง",
+                        "<strong>Workload Visibility</strong> — ช่วยให้เห็นภาระงานและจุดคอขวดของทีม",
+                        "<strong>Team Coordination</strong> — ใช้เป็นข้อมูลประกอบการสื่อสารงานภายในทีม"
+                    ]
+                }
+            },
+            {
+                id: "18435252",
+                name: "สุทิวา ปรีชารัตน์",
+                img: "assets/people/18435252.jpg",
+                position: "Acting Cockpit room Section Manager",
+                dept: "Cockpit room Center",
+                tenure: "23 ปี 2 เดือน",
+                age: "45 ปี 8 เดือน",
+                aiScore: "8.8",
+                gmailLink: "https://calendar.google.com/calendar/embed?src=sutiwa.pcr2436%40gmail.com&ctz=Asia%2FBangkok",
+                profileDetail: {
+                    education: "ป. ตรี บธ.บ. การจัดการ มหาวิทยาลัยรามคำแหง",
+                    supervisor: "วนิดา ภาวนาภรณ์",
+                    highlightTitle: "ประสบการณ์สูงและบันทึกงานเพื่อควบคุมภาพรวมการปฏิบัติงาน",
+                    highlights: [
+                        "<strong>Operational Control</strong> — เห็นงานประจำและงานติดตามได้ชัดเจน",
+                        "<strong>Experience Capture</strong> — บันทึกช่วยถ่ายทอดประสบการณ์ให้ทีม",
+                        "<strong>Management Discipline</strong> — สะท้อนวินัยในการจัดการงานต่อเนื่อง"
+                    ]
+                }
+            },
+            {
+                id: "551637",
+                name: "พลวัฒน์ ศรีระธุ",
+                img: "assets/people/551637.jpg",
+                position: "Ethanol Section Manager",
+                dept: "E85",
+                tenure: "13 ปี 11 เดือน",
+                age: "36 ปี 9 เดือน",
+                aiScore: "8.5",
+                gmailLink: "https://calendar.google.com/calendar/u/1?cid=cG9ubGF3YXQuczY2ODBAZ21haWwuY29t",
+                profileDetail: {
+                    education: "ป. ตรี วท.บ. ฟิสิกส์ มหาวิทยาลัยเชียงใหม่",
+                    supervisor: "ธีรวุฒิ นาคนาคา",
+                    highlightTitle: "บันทึกเพื่อบริหารงานผลิตและติดตามประเด็นสำคัญ",
+                    highlights: [
+                        "<strong>Production Focus</strong> — เห็นกิจกรรมหลักของหน่วยงานได้ชัด",
+                        "<strong>Issue Tracking</strong> — ใช้ติดตามประเด็นและการแก้ไขงาน",
+                        "<strong>Knowledge Sharing</strong> — ช่วยยกระดับการเรียนรู้และการสื่อสารในทีม"
+                    ]
+                }
+            },
+            {
+                id: "18504374",
+                name: "อนันต์ สิทธิวันชัย",
+                img: "assets/people/18504374.jpg",
+                position: "Operational Compliance Manager",
+                dept: "Process Improvement",
+                tenure: "23 ปี 1 เดือน",
+                age: "45 ปี 11 เดือน",
+                aiScore: "8.5",
+                gmailLink: "https://calendar.google.com/calendar/embed?src=anan.si0801%40gmail.com&ctz=Asia%2FBangkok",
+                profileDetail: {
+                    education: "ป. ตรี วศ.บ. ไฟฟ้า มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี",
+                    supervisor: "วิชัย เพ็ชรดี",
+                    highlightTitle: "บันทึกช่วยควบคุม Compliance และพัฒนากระบวนการ",
+                    highlights: [
+                        "<strong>Compliance</strong> — ข้อมูลช่วยติดตามมาตรฐานการปฏิบัติงาน",
+                        "<strong>Process Improvement</strong> — เห็นโอกาสปรับปรุงจากบันทึกงานจริง",
+                        "<strong>Follow-up</strong> — ใช้ตรวจสอบสถานะและความคืบหน้าของงาน"
+                    ]
+                }
+            },
+            {
+                id: "581673",
+                name: "วรวุฒิ หอมเนียม",
+                img: "assets/people/581673.jpg",
+                position: "Automation Maintenance Section Mgr. (CM&FSD)",
+                dept: "Engineering Maintenance (EM)",
+                tenure: "10 ปี 9 เดือน",
+                age: "33 ปี 10 เดือน",
+                aiScore: "7.5",
+                gmailLink: "https://calendar.google.com/calendar/embed?src=worawut.h8687%40gmail.com&ctz=Asia%2FBangkok",
+                profileDetail: {
+                    education: "ป. ตรี วศ.บ. ระบบควบคุม มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี",
+                    supervisor: "ณัฐวัฒน์ เกษมุติ",
+                    highlightTitle: "บันทึกงาน Automation เพื่อเห็นภาพการซ่อมบำรุงและปัญหาเชิงระบบ",
+                    highlights: [
+                        "<strong>Automation Tracking</strong> — บันทึกกิจกรรมและปัญหาระบบอัตโนมัติ",
+                        "<strong>Root Cause</strong> — ช่วยรวบรวมข้อมูลเพื่อวิเคราะห์สาเหตุ",
+                        "<strong>Maintenance Planning</strong> — สนับสนุนการวางแผนซ่อมบำรุงเชิงป้องกัน"
+                    ]
+                }
+            },
+            {
+                id: "600599",
+                name: "วรพันธ์ วงศ์ไพศาลสิริกุล",
+                img: "assets/people/600599.jpg",
+                position: "DIT Section Manager (Land Logistics system)",
+                dept: "Information Technology and Cyber Security",
+                tenure: "9 ปี 1 เดือน",
+                age: "44 ปี 2 เดือน",
+                aiScore: "7.5",
+                gmailLink: "https://calendar.google.com/calendar/u/0?cid=d29yYXB1bi53MzQ0NUBnbWFpbC5jb20",
+                profileDetail: {
+                    education: "ป. ตรี วท.บ. สถิติ มหาวิทยาลัยขอนแก่น",
+                    supervisor: "ดวงมาลัย คล่องดี",
+                    highlightTitle: "บันทึกงานระบบ IT เพื่อเชื่อมโยงงาน Support, Security และ Logistics",
+                    highlights: [
+                        "<strong>System Support</strong> — เห็นภาพงานดูแลระบบและคำร้องที่เกี่ยวข้อง",
+                        "<strong>Cyber Awareness</strong> — ใช้ติดตามงานด้านความปลอดภัยของระบบ",
+                        "<strong>Data Mindset</strong> — จัดข้อมูลให้พร้อมใช้ประกอบการตัดสินใจ"
+                    ]
+                }
+            }
+        ];
+
+        let activeSlideIndex = 0;
+
+        function fallbackImage(emp) {
+            return `https://placehold.co/300x375/002d62/ffcc00?text=${encodeURIComponent(emp.id)}`;
+        }
+
+        function renderOverviewCards() {
+            const gridContainer = document.getElementById('overview-grid');
+            gridContainer.innerHTML = '';
+            employeeData.forEach((emp, index) => {
+                const cardHTML = `
+                    <button onclick="goToSlide(${index + 1})" class="bg-white rounded-xl border border-slate-200 p-3 flex flex-col justify-between shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all text-left relative overflow-hidden group" style="border-top-color: #FFCC00; border-top-width: 4px;">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-12 h-12 rounded-lg overflow-hidden border-2 border-npsNavy flex-shrink-0 bg-slate-50 shadow-inner">
+                                <img src="${emp.img}" alt="${emp.name}" onerror="this.onerror=null; this.src='${fallbackImage(emp)}';" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex flex-col min-w-0 flex-grow">
+                                <div class="flex justify-between items-start">
+                                    <span class="bg-slate-100 border border-slate-200 text-npsNavy font-prompt text-[9px] font-bold px-1.5 py-0.5 rounded">ID: ${emp.id}</span>
+                                    <span class="bg-amber-50 border border-amber-300 text-amber-800 text-[9px] font-bold px-1 rounded flex items-center gap-0.5">
+                                        <i class="fa-solid fa-star text-amber-500 text-[8px]"></i> ${emp.aiScore}
+                                    </span>
+                                </div>
+                                <h4 class="font-prompt font-bold text-npsNavy text-sm truncate mt-1" title="${emp.name}">${emp.name}</h4>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-1.5 my-1.5">
+                            <div class="flex items-center justify-center bg-slate-50 border border-slate-100 rounded px-2 py-1.5 text-slate-700 min-h-[44px]">
+                                <p class="text-[10px] font-semibold leading-normal text-center break-words overflow-visible" title="${emp.position}">
+                                    <i class="fa-solid fa-briefcase text-[10px] text-npsYellow mr-1 inline-block align-middle"></i>${emp.position}
+                                </p>
+                            </div>
+                            <div class="flex items-center justify-center bg-slate-50 border border-slate-100 rounded px-2 py-1 text-slate-500 min-h-[26px]">
+                                <p class="text-[9px] font-medium leading-normal text-center break-words overflow-visible" title="${emp.dept}">
+                                    <i class="fa-solid fa-building text-[10px] text-slate-400 mr-1 inline-block align-middle"></i>${emp.dept}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 border border-slate-100 rounded-lg grid grid-cols-2 p-1.5 gap-1">
+                            <div class="flex flex-col">
+                                <span class="text-[8px] font-semibold font-prompt text-slate-400 uppercase tracking-wider">อายุงาน</span>
+                                <span class="text-[10px] font-bold text-slate-700 leading-tight">${emp.tenure}</span>
+                            </div>
+                            <div class="flex flex-col border-l border-slate-200 pl-2">
+                                <span class="text-[8px] font-semibold font-prompt text-slate-400 uppercase tracking-wider">อายุตัว</span>
+                                <span class="text-[10px] font-bold text-slate-700 leading-tight">${emp.age}</span>
+                            </div>
+                        </div>
+                    </button>
+                `;
+                gridContainer.innerHTML += cardHTML;
+            });
+        }
+
+        function renderCarouselDots() {
+            const dotsContainer = document.getElementById('carousel-dots');
+            dotsContainer.innerHTML = '';
+            for (let i = 0; i <= 10; i++) {
+                const activeClass = i === activeSlideIndex ? 'bg-npsYellow w-5' : 'bg-slate-200 hover:bg-slate-400 w-2';
+                const dotTitle = i === 0 ? 'ภาพรวม Dashboard' : `พนักงานท่านที่ ${i}`;
+                dotsContainer.innerHTML += `<button onclick="goToSlide(${i})" class="h-2 rounded-full transition-all duration-300 ${activeClass}" title="${dotTitle}"></button>`;
+            }
+        }
+
+        function loadProfileSlide(index) {
+            const container = document.getElementById('slide-profile-container');
+            const emp = employeeData[index - 1];
+            if (!emp) return;
+
+            const highlightsHTML = emp.profileDetail.highlights.map(item => `
+                <li class="flex items-start gap-2 text-xs text-slate-700 leading-relaxed mb-2.5">
+                    <span class="text-npsYellow text-sm mt-0.5"><i class="fa-solid fa-circle-check"></i></span>
+                    <span>${item}</span>
+                </li>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="grid grid-cols-12 gap-6 h-[460px] w-full">
+                    <div class="col-span-4 flex flex-col justify-between h-full bg-slate-50 border border-slate-200 rounded-2xl p-5 relative overflow-hidden shadow-inner">
+                        <div class="absolute top-0 left-0 w-full h-2 bg-npsYellow"></div>
+                        <div class="w-full aspect-[4/5] rounded-xl overflow-hidden border-4 border-white shadow-md relative group bg-white">
+                            <img src="${emp.img}" alt="${emp.name}" onerror="this.onerror=null; this.src='${fallbackImage(emp)}';" class="w-full h-full object-cover">
+                            <div class="absolute bottom-2 left-2 bg-npsNavy/90 text-npsYellow px-2.5 py-1 rounded text-[10px] font-prompt font-bold">
+                                NPS REPRESENTATIVE
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 mt-4">
+                            <div class="bg-white border border-slate-200 rounded-lg p-2.5 text-center shadow-sm">
+                                <span class="text-[9px] font-prompt font-bold text-slate-400 uppercase tracking-widest block mb-0.5">อายุงาน</span>
+                                <span class="text-xs font-bold text-npsNavy">${emp.tenure}</span>
+                            </div>
+                            <div class="bg-white border border-slate-200 rounded-lg p-2.5 text-center shadow-sm">
+                                <span class="text-[9px] font-prompt font-bold text-slate-400 uppercase tracking-widest block mb-0.5">อายุตัวพนักงาน</span>
+                                <span class="text-xs font-bold text-npsNavy">${emp.age}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-span-8 flex flex-col justify-between h-full relative">
+                        <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-npsNavy text-npsYellow text-[10px] font-bold font-prompt px-2 py-0.5 rounded">ID: ${emp.id}</span>
+                                    <span class="text-xs text-slate-400 font-prompt font-bold">${emp.dept}</span>
+                                </div>
+                                <h3 class="font-prompt font-bold text-npsNavy text-2xl mt-1">${emp.name}</h3>
+                                <p class="text-sm font-semibold text-slate-600 mt-0.5"><i class="fa-solid fa-briefcase text-npsYellow mr-1.5"></i>ตำแหน่ง: ${emp.position}</p>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[9px] font-bold text-slate-400 font-prompt uppercase tracking-wider mb-1">ประเมินสมุดพก AI</span>
+                                <div class="bg-amber-100 border-2 border-amber-400 rounded-2xl px-4 py-2 flex items-center gap-2 shadow-sm">
+                                    <i class="fa-solid fa-star text-amber-500 text-lg"></i>
+                                    <div class="text-right leading-none">
+                                        <span class="text-2xl font-prompt font-extrabold text-npsNavy">${emp.aiScore}</span>
+                                        <span class="text-xs font-bold text-slate-500">/ 10</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-3.5 my-3 flex-grow custom-scroll overflow-y-auto pr-1 text-sm">
+                            <div class="grid grid-cols-12 gap-3">
+                                <div class="col-span-8 bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-start gap-3 shadow-sm min-w-0">
+                                    <div class="w-8 h-8 rounded-lg bg-npsNavy/10 flex items-center justify-center flex-shrink-0">
+                                        <i class="fa-solid fa-graduation-cap text-npsNavy"></i>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <span class="text-[10px] font-bold font-prompt text-slate-400 block mb-0.5">ประวัติการศึกษา</span>
+                                        <span class="text-[11px] font-semibold text-slate-700 leading-tight block">${emp.profileDetail.education}</span>
+                                    </div>
+                                </div>
+                                <div class="col-span-4 bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-start gap-3 shadow-sm min-w-0">
+                                    <div class="w-8 h-8 rounded-lg bg-npsNavy/10 flex items-center justify-center flex-shrink-0">
+                                        <i class="fa-solid fa-user-tie text-npsNavy"></i>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <span class="text-[10px] font-bold font-prompt text-slate-400 block mb-0.5">หัวหน้างานโดยตรง</span>
+                                        <span class="text-[11px] font-semibold text-slate-700 leading-tight block">${emp.profileDetail.supervisor}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col shadow-sm flex-grow">
+                                <div class="flex items-center gap-2 border-b border-slate-200 pb-2 mb-3">
+                                    <span class="text-npsNavy text-lg"><i class="fa-regular fa-calendar-check"></i></span>
+                                    <h4 class="font-prompt font-bold text-npsNavy text-sm">จุดเด่นของสมุดพก (Google Calendar Highlights)</h4>
+                                </div>
+                                <p class="text-xs text-npsNavy font-semibold bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 mb-3.5 italic">
+                                    "${emp.profileDetail.highlightTitle}"
+                                </p>
+                                <ul class="list-none pl-0">${highlightsHTML}</ul>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center border-t border-slate-100 pt-3">
+                            <button onclick="goToSlide(0)" class="text-xs font-prompt font-semibold text-npsNavy hover:text-white bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 hover:bg-npsNavy transition-all flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-chevron-left"></i> กลับหน้าภาพรวม
+                            </button>
+                            <a id="gmail-btn-${emp.id}" href="${emp.gmailLink}" target="_blank" rel="noopener noreferrer" class="text-xs font-prompt font-semibold text-white bg-[#1a73e8] hover:bg-[#155cb4] transition-all rounded-lg px-5 py-2.5 flex items-center gap-2 shadow-md">
+                                <i class="fa-solid fa-calendar-days"></i> เปิดหน้า Google Calendar / บันทึกประวัติสมุดพก
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateSlideView() {
+            document.querySelectorAll('.slide-content').forEach(slide => slide.classList.remove('active'));
+
+            const slideIndicator = document.getElementById('slide-indicator');
+            const mainTitle = document.getElementById('presentation-main-title');
+            const backBtn = document.getElementById('back-dashboard-btn');
+
+            if (activeSlideIndex === 0) {
+                document.getElementById('slide-0').classList.add('active');
+                slideIndicator.textContent = 'หน้า 1 จาก 11: Dashboard ภาพรวม';
+                mainTitle.textContent = 'สมุดพกออนไลน์ (Google Calendar) : ภาพรวมระดับประเมิน AI ทั้ง 10 สายงาน';
+                backBtn.classList.add('hidden');
+            } else {
+                loadProfileSlide(activeSlideIndex);
+                document.getElementById('slide-profile-container').classList.add('active');
+                const emp = employeeData[activeSlideIndex - 1];
+                slideIndicator.textContent = `หน้า ${activeSlideIndex + 1} จาก 11: แนะนำประวัติพนักงาน`;
+                mainTitle.textContent = `ประวัติรายบุคคล : ${emp.name} (${emp.dept})`;
+                backBtn.classList.remove('hidden');
+            }
+
+            renderCarouselDots();
+            if (window.location.hash !== `#${activeSlideIndex}`) {
+                history.replaceState(null, '', `#${activeSlideIndex}`);
+            }
+        }
+
+        function goToSlide(index) {
+            if (index < 0 || index > 10) return;
+            activeSlideIndex = index;
+            updateSlideView();
+        }
+
+        function nextSlide() {
+            activeSlideIndex = (activeSlideIndex + 1) % 11;
+            updateSlideView();
+        }
+
+        function prevSlide() {
+            activeSlideIndex = (activeSlideIndex - 1 + 11) % 11;
+            updateSlideView();
+        }
+
+        function pageFromHash() {
+            const value = Number.parseInt(window.location.hash.replace('#', ''), 10);
+            return Number.isInteger(value) && value >= 0 && value <= 10 ? value : 0;
+        }
+
+        function bindInputEvents() {
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'ArrowRight' || event.key === ' ') {
+                    event.preventDefault();
+                    nextSlide();
+                } else if (event.key === 'ArrowLeft') {
+                    event.preventDefault();
+                    prevSlide();
+                } else if (event.key === 'Escape') {
+                    goToSlide(0);
+                }
+            });
+
+            window.addEventListener('hashchange', () => goToSlide(pageFromHash()));
+
+            let touchStartX = 0;
+            let touchEndX = 0;
+            const slideArea = document.querySelector('.slide-frame');
+
+            slideArea.addEventListener('touchstart', function(event) {
+                touchStartX = event.changedTouches[0].screenX;
+            }, false);
+
+            slideArea.addEventListener('touchend', function(event) {
+                touchEndX = event.changedTouches[0].screenX;
+                if (touchEndX < touchStartX - 50) nextSlide();
+                if (touchEndX > touchStartX + 50) prevSlide();
+            }, false);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            renderOverviewCards();
+            bindInputEvents();
+            activeSlideIndex = pageFromHash();
+            updateSlideView();
+        });
+    </script>
+</body>
+</html>
